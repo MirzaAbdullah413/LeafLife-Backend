@@ -10,10 +10,10 @@ app = FastAPI(title="LeafLife")
 #Adding the middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origin=["*"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
-    allow_header=["*"],
+    allow_headers=["*"],
 )
 
 #loaded the Model 
@@ -30,12 +30,12 @@ def health_check():
 @app.post("/predict")
 async def predict(file: UploadFile=File(...)):
     #Content Validation 
-    if file.content_type not in ("image/jpeg", "image/jpg"):
+    if file.content_type not in ("image/jpeg", "image/jpg", "images/png"):
         raise HTTPException(status_code=400, detail="Only JPG/PNG images are supported")
 
     try:
         contents = await file.read()
-        pil_image = Image.open(io.BytesIO(contents)).convert("RGD")
+        pil_image = Image.open(io.BytesIO(contents)).convert("RGB")
     except Exception:
         raise HTTPException(status_code = 400, detail="Could not read the File")
 
