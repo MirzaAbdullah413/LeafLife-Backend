@@ -1,13 +1,19 @@
+from Predict_Image import load_trained_model
+from Predict_Image import predict_image as _predict_image
 import base64
+import threading
 import cv2
 
 from Predict_Image import load_trained_model
 from Predict_Image import predict_image as _predict_image
 
+_infer_lock = threading.Lock()
+
 def predict_image(model, pil_image, val_transformation, classes, device):
-    class_name, heatmap_image = _predict_image(
-        model, pil_image, val_transformation, classes, device
-    )
+    with _infer_lock:
+        class_name, heatmap_image = _predict_image(
+            model, pil_image, val_transformation, classes, device
+        )
 
     bgr_image = cv2.cvtColor(heatmap_image, cv2.COLOR_RGB2BGR)
     success, buffer = cv2.imencode(".jpg", bgr_image)

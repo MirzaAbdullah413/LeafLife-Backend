@@ -5,7 +5,6 @@ import torch.nn as nn
 import numpy as np
 from PIL import Image
 from torchvision import transforms
-import matplotlib.pyplot as plt
 
 
 # --- Must match the architecture used during training exactly ---
@@ -84,14 +83,14 @@ def grad_cam(model, img_tensor, class_id, target_layer):
 
     h1 = target_layer.register_forward_hook(forward_hook)
     h2 = target_layer.register_full_backward_hook(backward_hook)
-
-    model.eval()
-    output = model(img_tensor)
-    model.zero_grad()
-    output[0, class_id].backward()
-
-    h1.remove()
-    h2.remove()
+    try:
+        model.eval()
+        output = model(img_tensor)
+        model.zero_grad()
+        output[0, class_id].backward()
+    finally:
+        h1.remove()
+        h2.remove()
 
     acts = activations['value'][0]
     grads = gradients['value'][0]
@@ -125,7 +124,8 @@ def predict_image(model, image_path, val_transformation, classes, device):
     img_tensor = val_transformation(pil_img).unsqueeze(0).to(device)
 
     model.eval()
-    output = model(img_tensor)
+    with torch.no_grad():
+        output = model(img_tensor)
     class_id = torch.argmax(output, dim=1).item()
     class_name = classes[class_id]
     print("Predicted class:", class_name)
@@ -138,6 +138,7 @@ def predict_image(model, image_path, val_transformation, classes, device):
 
 
 if __name__ == '__main__':
+    import matplotlib.pyplot as plt
     if len(sys.argv) != 3:
         print("Usage: python Predict_Image.py <model_path> <image_path>")
         sys.exit(1)
